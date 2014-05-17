@@ -1,4 +1,4 @@
-Persistent Metadata Serialization
+Serialization with Persisted Metadata 
 =========
 
 An experimental serializer with a design that lies somewhere between built-in serialization and something like a custom writeExternal method for each object in terms of flexibility and compactness, with the additioan of generating metadata that is saved out of band of the serialized payload.  (TODO: finish off deserialization code)
