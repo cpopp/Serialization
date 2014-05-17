@@ -12,7 +12,7 @@ If it encounters a class that it does not have special handling for, it writes o
 Getting started is as simple as selecting a data store and instantiating the Serializer:
 
     // create an in memory data store backing the persistent serializer
-    InMemoryDataStore dataStore = new InMemoryDataStore();
+    DataStore dataStore = new InMemoryDataStore();
     	
     // serializer itself that will persist and lookup metadata in the store
     Serializer serializer = new PersistedMetaDataSerializer(dataStore);
