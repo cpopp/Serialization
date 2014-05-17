@@ -21,7 +21,7 @@ Getting started is as simple as selecting a data store and instantiating the Ser
     byte[] payload = serializer.serialize(new SimplePojo());
     SimplePojo pojo = (SimplePojo)serializer.deserialize(payload);
 
-Persistence
+Compact Serialized Representation
 ----
 In order to keep the size of the serialized data small, the serializer separates the metadata from the actual content being serialized.  When creating a serializer, an implementation of a data store is supplied to it.  Using this data store, the serializer will create and store metadata about a class the first time it sees it.  This allows the serializer to serialize the fields in a specific order, but without that order needing to be maintained as the fields of the class change.
 
