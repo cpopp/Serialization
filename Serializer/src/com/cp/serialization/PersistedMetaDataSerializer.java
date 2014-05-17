@@ -2,6 +2,7 @@ package com.cp.serialization;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -136,10 +137,6 @@ public class PersistedMetaDataSerializer implements Serializer {
 	 * It is planned to pass off handling for the above conditions to
 	 * an optional listener, but it is now implemented at this point.<p>
 	 * 
-	 * TODO: Actually implement setting of fields...right now deserialize
-	 * only instantiates the object based on looking up the compactId/metadata
-	 * from the data store...it just needs to implement reading types from the
-	 * supplied data now
 	 */
 	@Override
 	public Object deserialize(byte[] data) throws Exception {
@@ -152,23 +149,48 @@ public class PersistedMetaDataSerializer implements Serializer {
 		}
 		String key = new String(keyBytes, "UTF-8");
 		
-		byte[] classMetaData = dataStore.loadData(key);
-		if(classMetaData == null) {
+		byte[] classMetadata = dataStore.loadData(key);
+		if(classMetadata == null) {
 			throw new IllegalArgumentException("No metadata found for " + key);
 		}
 		
-		ClassMetaData metaData = new ClassMetaData(key, classMetaData);
-		Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(metaData.getClassName());
+		ClassMetaData metadata = new ClassMetaData(key, classMetadata);
+		Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(metadata.getClassName());
 		
 		Constructor<?> constructor = clazz.getDeclaredConstructor();
 		constructor.setAccessible(true);
 		Object deserialized = constructor.newInstance();
 		
-		// TODO: deserialization logic
+		for(FieldInfo fieldInfo : metadata.getFields()) {
+			// reads in the value of the read from the stream
+			Object value = readValue(bis, fieldInfo.getClassName());
+			
+			try {
+				Field field = clazz.getDeclaredField(fieldInfo.getName());
+				field.setAccessible(true);
+				
+				if(field.getType().getName().equals(fieldInfo.getClassName())) {
+					// if the type of the field is the same as when we serialized
+					// it, go ahead and set it
+					field.set(deserialized, value);
+				} else {
+					// field type is different now...we'll skip it, but this
+					// is another good opportunity to notify a handler in
+					// order for them to handle the versioning
+				}
+			} catch (NoSuchFieldException e) {
+				// looks like the field we serialized no longer exists
+				// in the class, so we'll skip it and leave it
+				// at the default.  in the future this would be a good
+				// location to notify a registered handler of the
+				// mismatched field, passing them the name and deserialized
+				// value in order for them to translate it to the new format
+			}
+		}
 		
 		return deserialized;
 	}
-
+	
 	/**
 	 * Writes the supplied value to the stream.  This handles the primitive types
 	 * and for objects, writes a boolean indicating whether the object is null,
@@ -191,11 +213,11 @@ public class PersistedMetaDataSerializer implements Serializer {
 		} else if(type.equals(Double.TYPE)) {
 			dos.writeDouble((Double)value);
 		} else {
-			// not a primitive...write false for null, otherwise true then value
+			// not a primitive...write true for null, otherwise false then value
 			if(value == null) {
-				bos.writeBoolean(false);
-			} else {
 				bos.writeBoolean(true);
+			} else {
+				bos.writeBoolean(false);
 				writeObject(bos, type, value);
 			}
 		}
@@ -230,19 +252,19 @@ public class PersistedMetaDataSerializer implements Serializer {
 			byte[] array = (byte[])value;
 			bos.writeDynamicNumber(array.length);
 			for(byte b : array) {
-				dos.writeByte(b);
+				bos.writeDynamicNumber(b);
 			}
 		} else if(type.equals(short[].class)) {
 			short[] array = (short[])value;
 			bos.writeDynamicNumber(array.length);
 			for(short s : array) {
-				dos.writeShort(s);
+				bos.writeDynamicNumber(s);
 			}
 		} else if(type.equals(int[].class)) {
 			int[] array = (int[])value;
 			bos.writeDynamicNumber(array.length);
 			for(int i : array) {
-				dos.writeInt(i);
+				bos.writeDynamicNumber(i);
 			}
 		} else if(type.equals(long[].class)) {
 			long[] array = (long[])value;
@@ -279,6 +301,118 @@ public class PersistedMetaDataSerializer implements Serializer {
 			// be overwhelming
 			byte[] data = serialize(value);
 			writeObject(bos, byte[].class, data);
+		}
+	}
+	
+	/**
+	 * Reads a value of the specified type from the stream.  This handles the 
+	 * primitive types and for objects, reads a boolean indicating whether the 
+	 * object is null, returning null or passing it off to 
+	 * {@link #readObject(BitInputStream, String)} for further reading
+	 */
+	private Object readValue(BitInputStream bis, String type) throws Exception {
+		DataInputStream dis = new DataInputStream(bis);
+		
+		if(type.equals(Boolean.TYPE.getName())) { // primitive types
+			return bis.readBoolean();
+		} else if(type.equals(Short.TYPE.getName())) {
+			return (short)bis.readDynamicNumber();
+		} else if(type.equals(Integer.TYPE.getName())) {
+			return (int)bis.readDynamicNumber();
+		} else if(type.equals(Long.TYPE.getName())){
+			return dis.readLong();
+		} else if(type.equals(Float.TYPE.getName())) {
+			return dis.readFloat();
+		} else if(type.equals(Double.TYPE.getName())) {
+			return dis.readDouble();
+		} else {
+			// not a primitive...write false for null, otherwise true then value
+			boolean isNull = bis.readBoolean();
+			if(isNull) {
+				return null;
+			} else {
+				return readObject(bis, type);
+			}
+		}
+	}
+	
+	/**
+	 * Reads an object of the supplied type from the stream, presuming that 
+	 * sufficient information has been read to determine that the object 
+	 * is not null
+	 */
+	private Object readObject(BitInputStream bis, String type) throws Exception {
+		DataInputStream dis = new DataInputStream(bis);
+		
+		if(type.equals(Boolean.class.getName())) { // auto-boxed primitives
+			return bis.readBoolean();
+		} else if(type.equals(Short.class.getName())) {
+			return (short)bis.readDynamicNumber();
+		} else if(type.equals(Integer.class.getName())) {
+			return (int)bis.readDynamicNumber();
+		} else if(type.equals(Long.class.getName())) {
+			return dis.readLong();
+		} else if(type.equals(Float.class.getName())) {
+			return dis.readFloat();
+		} else if(type.equals(Double.class.getName())) {
+			return dis.readDouble();
+		} else if(type.equals(boolean[].class.getName())) { // primitive arrays
+			boolean[] array = new boolean[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = dis.readBoolean();
+			}
+			return array;
+		} else if(type.equals(byte[].class.getName())) { 
+			byte[] array = new byte[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = (byte)bis.readDynamicNumber();
+			}
+			return array;
+		} else if(type.equals(short[].class.getName())) {
+			short[] array = new short[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = (short)bis.readDynamicNumber();
+			}
+			return array;
+		} else if(type.equals(int[].class.getName())) {
+			int[] array = new int[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = (int)bis.readDynamicNumber();
+			}
+			return array;
+		} else if(type.equals(long[].class.getName())) {
+			long[] array = new long[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = dis.readLong();
+			}
+			return array;
+		} else if(type.equals(float[].class.getName())) {
+			float[] array = new float[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = dis.readFloat();
+			}
+			return array;
+		} else if(type.equals(double[].class.getName())) {
+			double[] array = new double[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = dis.readDouble();
+			}
+			return array;
+		} else if(type.equals(String.class.getName())) { // String
+			return bis.readUTF(false); 
+		} else if(type.equals(Date.class.getName())){ // Date
+			return new Date(dis.readLong());
+		} else if(type.equals(BigDecimal.class.getName())) { // BigDecimal
+			BigInteger unscaledValue = new BigInteger((byte[])readObject(bis, byte[].class.getName()));
+			int scale = (Integer)readValue(bis, Integer.TYPE.getName());
+			return new BigDecimal(unscaledValue, scale);
+		} else {
+			// hmm not sure what type it is.  generated its metadata and
+			// serialize it like anything else.  due to the compactId
+			// we assign to each new type, the type information won't
+			// be overwhelming
+			byte[] someObject = (byte[])readObject(bis, byte[].class.getName());
+			return deserialize(someObject);
 		}
 	}
 }

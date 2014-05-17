@@ -9,7 +9,7 @@ public class PersistedMetaDataSerializerTest {
 	@Test
 	public void testSimpleSerialization() throws Exception {
 		// create the in memory data store backing the persistent serializer
-		InMemoryDataStore dataStore = new InMemoryDataStore();
+		DataStore dataStore = new InMemoryDataStore();
 		
 		// serializer itself that will persist and lookup metadata in the store
 		Serializer serializer = new PersistedMetaDataSerializer(dataStore);
@@ -19,7 +19,9 @@ public class PersistedMetaDataSerializerTest {
 		
 		// try serializing and deserializing the pojo
 		byte[] smallPayload = serializer.serialize(pojo);
-		Object deserialized = serializer.deserialize(smallPayload);
+		SimplePojo deserialized = (SimplePojo)serializer.deserialize(smallPayload);
+		Assert.assertEquals("small", deserialized.getContent());
+		
 		Assert.assertTrue(deserialized instanceof SimplePojo);
 		
 		// give the pojo a larger payload.  the serialized payload
@@ -34,6 +36,10 @@ public class PersistedMetaDataSerializerTest {
 		
 		public void setContent(String content) {
 			this.content = content;
+		}
+		
+		public String getContent() {
+			return content;
 		}
 	}
 }
