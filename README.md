@@ -1,7 +1,7 @@
 Serialization
 =========
 
-An experimental serializer with a design that lies somewhere between built-in serialization and something like a custom writeExternal method for each object in terms of flexibility and compactness.
+An experimental serializer with a design that lies somewhere between built-in serialization and something like a custom writeExternal method for each object in terms of flexibility and compactness.  (TODO: finish off deserialization code)
 
 Basic Approach
 ----
@@ -17,7 +17,7 @@ Getting started is as simple as selecting a data store and instantiating the Ser
     // serializer itself that will persist and lookup metadata in the store
     Serializer serializer = new PersistedMetaDataSerializer(dataStore);
 
-    // try serializing and deserializing the pojo
+    // try serializing and deserializing a pojo
     byte[] payload = serializer.serialize(new SimplePojo());
     SimplePojo pojo = (SimplePojo)serializer.deserialize(payload);
 
