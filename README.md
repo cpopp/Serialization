@@ -9,7 +9,7 @@ The serializer attempts to automatically serialize classes by using reflection t
 
 If it encounters a class that it does not have special handling for, it writes out some minimal metadata and then proceeds to reflectively write out its fields.
 
-Getting started is as simple as selecting a data store and instantiating the Serializer:
+Getting started is as simple as selecting a data store and instantiating the serializer:
 
     // create an in memory data store backing the persistent serializer
     DataStore dataStore = new InMemoryDataStore();
