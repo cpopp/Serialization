@@ -103,11 +103,9 @@ public class PersistedMetaDataSerializer implements Serializer {
 		try {
 			bos.writeDynamicNumber(metadata.getCompactId());
 			for(FieldInfo fieldInfo : metadata.getFields()) {
-				int before = baos.size();
 				Field field = toSerialize.getClass().getDeclaredField(fieldInfo.getName());
 				field.setAccessible(true);
 				writeValue(bos, field.getType(), field.get(toSerialize));
-				System.out.println(fieldInfo.getName() + " = " + (baos.size()-before));
 			}
 			
 			bos.flush();
