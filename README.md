@@ -41,9 +41,9 @@ The DataStore used by the serializer contains metadata of classes that have been
 
 In addition to storing metadata, the data store provides a compact identifier that is used in place of a key in the actual serialized data.  This is for the most part transparent to the data store, but in order for it to be accomplished the data store needs to provide a way of providing a counter that can be atomically incrementing across the scope of potential concurrent users of the data store.  In a single JVM, an AtomicLong works fine, but if the data store is shared across a cluster of application, some sort of shared counter is necessary.
 
-A key for a class might look like _org.something.MyClass/c299b234b76777171d8b8a9d3ad48f6c2bdfea8e_ which is a concatenation of the class name and the SHA-1 over its fields.  The key that is used in its place for serialization is a _long_ that is mapped to the key in the data store.  So, during deserialization the long provides the mapping back to the key, which is used to look up the metadata.
+A key for a class might look like _org.something.MyClass/c299b234b76777171d8b8a9d3ad48f6c2bdfea8e_ which is a concatenation of the class name and the SHA-1 over its fields.  The key that is used in its place for serialization is a _long_ that is mapped to the key in the data store.  So, during deserialization the long provides the mapping back to the key, which in turn is used to look up the metadata.
 
-Since a data associated with a key in the data store never changes, an aggressive cache can be put in front of it so that the only time the cache is not necessary is when a new class is encountered for the first time.
+Since data associated with a key in the data store never changes, an aggressive cache can be put in front of it so that the only time the cache is not necessary is when a new class is encountered for the first time.
 
 The repository contains an example *InMemoryDataStore*.  It stores data in a map, and uses an AtomicLong for the atomic counter.  It is great to try things out with, but you'll eventually want a data store with a more persistent backend like a database.  The data store interface is pretty simple so it should map to many persistance mechanisms.
 
