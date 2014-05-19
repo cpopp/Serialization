@@ -55,9 +55,9 @@ public class PersistedMetaDataSerializerTest {
 		simplePojo.setContent("some string");
 		
 		// try a pojo that has mostly default values for the types, and empty arrays
-		ComplexPojo complexPojo = new ComplexPojo(false, (byte)0, (short)0, 0, 0L,
-				0f, 0.0, null, Boolean.FALSE, (byte)0, (short)0, (int)0, (long)0,
-				(Float)0f, (Double)0.0, new boolean[0], new byte[0], new short[0], new int[0],
+		ComplexPojo complexPojo = new ComplexPojo(false, (char)0, (byte)0, (short)0, 0, 0L,
+				0f, 0.0, null, Boolean.FALSE, (char)0, (byte)0, (short)0, (int)0, (long)0,
+				(Float)0f, (Double)0.0, new boolean[0], new char[0], new byte[0], new short[0], new int[0],
 				new long[0], new float[0], new double[0], "string", new Date(0L),
 				BigDecimal.ZERO, simplePojo);
 		
@@ -67,9 +67,9 @@ public class PersistedMetaDataSerializerTest {
 		Assert.assertEquals(complexPojo, deserializedComplexPojo);
 		
 		// if that passed, try one with non-default values and arrays with data
-		complexPojo = new ComplexPojo(true, Byte.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Long.MAX_VALUE,
-				Float.MIN_VALUE, Double.MAX_VALUE, null, Boolean.TRUE, Byte.MAX_VALUE, Short.MIN_VALUE, Integer.MAX_VALUE, Long.MIN_VALUE,
-				Float.MAX_VALUE, -Double.MAX_VALUE, new boolean[]{false, true}, new byte[]{-1, 0, 1}, new short[]{-1435, 2345}, new int[]{234, 529349},
+		complexPojo = new ComplexPojo(true, 'c', Byte.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Long.MAX_VALUE,
+				Float.MIN_VALUE, Double.MAX_VALUE, null, Boolean.TRUE, ' ', Byte.MAX_VALUE, Short.MIN_VALUE, Integer.MAX_VALUE, Long.MIN_VALUE,
+				Float.MAX_VALUE, -Double.MAX_VALUE, new boolean[]{false, true}, "some\u0000string".toCharArray(), new byte[]{-1, 0, 1}, new short[]{-1435, 2345}, new int[]{234, 529349},
 				new long[]{Long.MIN_VALUE, 123}, new float[]{-Float.MAX_VALUE, 123}, new double[]{-Double.MIN_VALUE,1.1f}, "~!@#$%^&*()_+`1234567890-={}|[]\\:\",./<?>", new Date(),
 				new BigDecimal(42387293948234L), simplePojo);
 		
@@ -124,13 +124,14 @@ public class PersistedMetaDataSerializerTest {
 			
 		}
 		
-		public ComplexPojo(boolean booleanField, byte byteField,
-				short shortField, int intField, long longField,
+		public ComplexPojo(boolean booleanField, char charField,
+				byte byteField, short shortField, int intField, long longField,
 				float floatField, double doubleField, String nullStringField,
-				Boolean booleanWrapperField, Byte byteWrapperField,
-				Short shortWrapperField, Integer intWrapperField,
-				Long longWrapperField, Float floatWrapperField,
-				Double doubleWrapperField, boolean[] booleanArrayField,
+				Boolean booleanWrapperField, Character charWrapperField,
+				Byte byteWrapperField, Short shortWrapperField,
+				Integer intWrapperField, Long longWrapperField,
+				Float floatWrapperField, Double doubleWrapperField,
+				boolean[] booleanArrayField, char[] charArrayField,
 				byte[] byteArrayField, short[] shortArrayField,
 				int[] intArrayField, long[] longArrayField,
 				float[] floatArrayField, double[] doubleArrayField,
@@ -138,6 +139,7 @@ public class PersistedMetaDataSerializerTest {
 				SimplePojo simplePojo) {
 
 			this.booleanField = booleanField;
+			this.charField = charField;
 			this.byteField = byteField;
 			this.shortField = shortField;
 			this.intField = intField;
@@ -146,6 +148,7 @@ public class PersistedMetaDataSerializerTest {
 			this.doubleField = doubleField;
 			this.nullStringField = nullStringField;
 			this.booleanWrapperField = booleanWrapperField;
+			this.charWrapperField = charWrapperField;
 			this.byteWrapperField = byteWrapperField;
 			this.shortWrapperField = shortWrapperField;
 			this.intWrapperField = intWrapperField;
@@ -153,6 +156,7 @@ public class PersistedMetaDataSerializerTest {
 			this.floatWrapperField = floatWrapperField;
 			this.doubleWrapperField = doubleWrapperField;
 			this.booleanArrayField = booleanArrayField;
+			this.charArrayField = charArrayField;
 			this.byteArrayField = byteArrayField;
 			this.shortArrayField = shortArrayField;
 			this.intArrayField = intArrayField;
@@ -164,7 +168,9 @@ public class PersistedMetaDataSerializerTest {
 			this.bigDecimalField = bigDecimalField;
 			this.simplePojo = simplePojo;
 		}
+
 		protected boolean booleanField;
+		protected char charField;
 		protected byte byteField;
 		protected short shortField;
 		protected int intField;
@@ -175,6 +181,7 @@ public class PersistedMetaDataSerializerTest {
 		protected String nullStringField;
 		
 		protected Boolean booleanWrapperField;
+		protected Character charWrapperField;
 		protected Byte byteWrapperField;
 		protected Short shortWrapperField;
 		protected Integer intWrapperField;
@@ -183,6 +190,7 @@ public class PersistedMetaDataSerializerTest {
 		protected Double doubleWrapperField;
 		
 		protected boolean[] booleanArrayField;
+		protected char[] charArrayField;
 		protected byte[] byteArrayField;
 		protected short[] shortArrayField;
 		protected int[] intArrayField;
@@ -213,6 +221,12 @@ public class PersistedMetaDataSerializerTest {
 			result = prime
 					* result
 					+ ((byteWrapperField == null) ? 0 : byteWrapperField
+							.hashCode());
+			result = prime * result + Arrays.hashCode(charArrayField);
+			result = prime * result + charField;
+			result = prime
+					* result
+					+ ((charWrapperField == null) ? 0 : charWrapperField
 							.hashCode());
 			result = prime * result
 					+ ((dateField == null) ? 0 : dateField.hashCode());
@@ -258,6 +272,7 @@ public class PersistedMetaDataSerializerTest {
 					+ ((stringField == null) ? 0 : stringField.hashCode());
 			return result;
 		}
+
 		@Override
 		public boolean equals(Object obj) {
 			if (this == obj)
@@ -289,6 +304,15 @@ public class PersistedMetaDataSerializerTest {
 				if (other.byteWrapperField != null)
 					return false;
 			} else if (!byteWrapperField.equals(other.byteWrapperField))
+				return false;
+			if (!Arrays.equals(charArrayField, other.charArrayField))
+				return false;
+			if (charField != other.charField)
+				return false;
+			if (charWrapperField == null) {
+				if (other.charWrapperField != null)
+					return false;
+			} else if (!charWrapperField.equals(other.charWrapperField))
 				return false;
 			if (dateField == null) {
 				if (other.dateField != null)
@@ -358,8 +382,6 @@ public class PersistedMetaDataSerializerTest {
 			} else if (!stringField.equals(other.stringField))
 				return false;
 			return true;
-		}
-		
-		
+		}		
 	}
 }

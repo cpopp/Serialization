@@ -202,6 +202,8 @@ public class PersistedMetaDataSerializer implements Serializer {
 		
 		if(type.equals(Boolean.TYPE)) { // primitive types
 			bos.writeBoolean((Boolean)value);
+		} else if(type.equals(Character.TYPE)) {
+			bos.writeDynamicNumber((Character)value);
 		} else if(type.equals(Byte.TYPE)) {
 			bos.writeDynamicNumber((Byte)value);
 		} else if(type.equals(Short.TYPE)) {
@@ -234,6 +236,8 @@ public class PersistedMetaDataSerializer implements Serializer {
 		
 		if(type.equals(Boolean.class)) { // auto-boxed primitives
 			bos.writeBoolean((Boolean)value);
+		} else if(type.equals(Character.class)) {
+			bos.writeDynamicNumber((Character)value);
 		} else if(type.equals(Byte.class)) {
 			bos.writeDynamicNumber((Byte)value);
 		} else if(type.equals(Short.class)) {
@@ -250,7 +254,13 @@ public class PersistedMetaDataSerializer implements Serializer {
 			boolean[] array = (boolean[])value;
 			bos.writeDynamicNumber(array.length);
 			for(boolean b : array) {
-				dos.writeBoolean(b);
+				bos.writeBoolean(b);
+			}
+		} else if(type.equals(char[].class)) {
+			char[] array = (char[])value;
+			bos.writeDynamicNumber(array.length);
+			for(char c : array) {
+				bos.writeDynamicNumber(c);
 			}
 		} else if(type.equals(byte[].class)) { 
 			byte[] array = (byte[])value;
@@ -319,6 +329,8 @@ public class PersistedMetaDataSerializer implements Serializer {
 		
 		if(type.equals(Boolean.TYPE.getName())) { // primitive types
 			return bis.readBoolean();
+		} else if(type.equals(Character.TYPE.getName())) {
+			return (char)bis.readDynamicNumber();
 		} else if(type.equals(Byte.TYPE.getName())) {
 			return (byte)bis.readDynamicNumber();
 		} else if(type.equals(Short.TYPE.getName())) {
@@ -352,6 +364,8 @@ public class PersistedMetaDataSerializer implements Serializer {
 		
 		if(type.equals(Boolean.class.getName())) { // auto-boxed primitives
 			return bis.readBoolean();
+		} else if(type.equals(Character.class.getName())) {
+			return (char)bis.readDynamicNumber();
 		} else if(type.equals(Byte.class.getName())) {
 			return (byte)bis.readDynamicNumber();
 		} else if(type.equals(Short.class.getName())) {
@@ -367,7 +381,13 @@ public class PersistedMetaDataSerializer implements Serializer {
 		} else if(type.equals(boolean[].class.getName())) { // primitive arrays
 			boolean[] array = new boolean[(int)bis.readDynamicNumber()];
 			for(int i = 0; i < array.length; i++) {
-				array[i] = dis.readBoolean();
+				array[i] = bis.readBoolean();
+			}
+			return array;
+		} else if(type.equals(char[].class.getName())) {
+			char[] array = new char[(int)bis.readDynamicNumber()];
+			for(int i = 0; i < array.length; i++) {
+				array[i] = (char)bis.readDynamicNumber();
 			}
 			return array;
 		} else if(type.equals(byte[].class.getName())) { 
